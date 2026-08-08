@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TIPSY PARTY · 테이블</title>
+<meta name="description" content="TIPSY PARTY — 쉼·삶·애. 마음이 가까워지는 대화 게임 테이블.">
+<meta name="theme-color" content="#17131b">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥂</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@300;500;700&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#f4efe9;--ink-dim:#a79da8;--accent:#D9A648;--accent-soft:rgba(217,166,72,.12);--glow:rgba(217,166,72,.30);--card:rgba(255,255,255,.055);--card-bd:rgba(255,255,255,.12)}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:'Gowun Dodum',sans-serif;color:var(--ink);overflow:hidden;
+    background:#17131b;
+    background:radial-gradient(130% 110% at 50% -10%, #262030 0%, #1b1622 45%, #120f17 80%, #0c0a10 100%)}
+  .serif{font-family:'Hahmlet',serif}
+  .stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:26px}
+  .glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(120% 90% at 50% -10%,var(--glow),transparent 55%),radial-gradient(100% 70% at 50% 120%,var(--accent-soft),transparent 60%);opacity:0;transition:opacity .9s ease}
+  .glow.on{opacity:.55}
+  .petal{position:fixed;z-index:1;pointer-events:none;font-size:20px;opacity:.32;filter:blur(.3px);animation:drift linear infinite}
+  @keyframes drift{0%{transform:translate(0,106vh) rotate(0deg)}100%{transform:translate(6vw,-8vh) rotate(40deg)}}
+
+  .screen{position:relative;z-index:2;width:100%;max-width:800px;text-align:center;display:none}
+  .screen.show{display:block}
+  .brand{letter-spacing:.55em;font-size:13px;color:var(--ink-dim);margin-bottom:14px;padding-left:.55em}
+  .screen h1{font-weight:300;font-size:clamp(25px,5vw,38px);line-height:1.45;margin-bottom:8px}
+  .screen h1 b{font-weight:700}
+  .sub{color:var(--ink-dim);font-size:14px;margin-bottom:32px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px}
+  .pick{position:relative;border:1px solid var(--card-bd);background:var(--card);backdrop-filter:blur(6px);
+    border-radius:20px;padding:26px 12px 22px;cursor:pointer;transition:transform .25s,border-color .25s,box-shadow .25s;overflow:hidden;
+    box-shadow:0 12px 32px -18px rgba(0,0,0,.65)}
+  .pick:active{transform:scale(.96)}
+  .pick:hover{transform:translateY(-4px);border-color:var(--pk);box-shadow:0 16px 40px -16px var(--pk)}
+  .pick .dot{width:34px;height:34px;border-radius:50%;margin:0 auto 12px;background:var(--pk);box-shadow:0 0 20px -2px var(--pk)}
+  .pick .nm{font-family:'Hahmlet',serif;font-size:20px;font-weight:500}
+  .pick .cc{font-size:11.5px;color:var(--ink-dim);margin-top:5px;line-height:1.5}
+  .pick .md{font-size:10.5px;color:var(--pk);margin-top:9px;font-weight:600}
+
+  #table{position:relative;z-index:2;width:100%;max-width:720px;display:none;flex-direction:column;align-items:center;text-align:center}
+  #table.show{display:flex}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:16px 20px}
+  .back{font-size:13px;color:var(--ink-dim);background:none;border:none;font-family:inherit;cursor:pointer;letter-spacing:.05em}
+  .back:active{opacity:.6}
+  .rounds{display:flex;gap:5px;background:rgba(255,255,255,.07);border:1px solid var(--card-bd);border-radius:30px;padding:4px}
+  .rd{border:none;background:none;color:var(--ink-dim);font-family:inherit;font-size:11.5px;padding:5px 12px;border-radius:30px;cursor:pointer;transition:.2s}
+  .rd.active{background:var(--accent);color:#141018;font-weight:bold}
+
+  .theme-head{margin-bottom:14px}
+  .theme-kw{font-size:12px;letter-spacing:.5em;color:var(--accent);padding-left:.5em;margin-bottom:8px}
+  .theme-name{font-family:'Hahmlet',serif;font-weight:700;font-size:clamp(28px,6.5vw,44px);line-height:1.08}
+  .rule{display:inline-flex;align-items:center;gap:7px;margin-top:15px;font-size:12.5px;color:var(--ink);
+    background:rgba(255,255,255,.06);border:1px solid var(--glow);padding:9px 16px;border-radius:30px;max-width:90vw}
+  .rule b{color:var(--accent);font-weight:normal}
+
+  .qcard{width:100%;min-height:232px;display:flex;align-items:center;justify-content:center;border-radius:24px;padding:40px 28px;margin:18px 0 22px;
+    background:var(--card);backdrop-filter:blur(8px);border:1px solid var(--card-bd);
+    box-shadow:0 26px 60px -34px var(--glow),inset 0 1px 0 rgba(255,255,255,.07);position:relative}
+  .qmark{position:absolute;top:12px;left:22px;font-family:'Hahmlet',serif;font-size:50px;color:var(--accent);opacity:.22;line-height:1}
+  .qcard.start .qmark{display:none}
+  #qbody{width:100%;transition:opacity .4s ease,transform .4s ease}
+  #qbody.fade{opacity:0;transform:translateY(14px)}
+
+  .taste{display:flex;flex-direction:column;gap:16px;align-items:center}
+  .taste-stmt{font-family:'Hahmlet',serif;font-weight:500;font-size:clamp(21px,4.5vw,30px);line-height:1.5}
+  .taste-hint{font-size:13px;color:var(--ink-dim)}
+
+  .rwrap{display:flex;flex-direction:column;gap:13px;align-items:center;animation:pop .5s ease}
+  .r-num{font-family:'Hahmlet',serif;font-weight:700;font-size:clamp(36px,8vw,56px);color:var(--accent);letter-spacing:.06em;line-height:1;text-shadow:0 0 28px var(--glow)}
+  .r-sub{font-family:'Hahmlet',serif;font-weight:300;font-size:clamp(19px,4.2vw,27px);line-height:1.4}
+  .r-hint{font-size:12.5px;color:var(--ink-dim)}
+
+  .tcwrap{display:flex;flex-direction:column;gap:16px;align-items:center;animation:pop .5s ease}
+  .tc-label{font-size:12.5px;letter-spacing:.14em;font-weight:600;color:var(--accent);
+    background:linear-gradient(120deg,rgba(255,255,255,.08),var(--accent-soft));border:1px solid var(--glow);
+    padding:7px 16px;border-radius:30px;box-shadow:0 4px 14px -6px var(--glow)}
+  .tc-nums{display:flex;gap:clamp(10px,3vw,22px);justify-content:center;align-items:center}
+  .tc-num{font-family:'Hahmlet',serif;font-weight:700;font-size:clamp(30px,7vw,50px);color:var(--accent);line-height:1;letter-spacing:.02em;text-shadow:0 0 26px var(--glow);min-width:1.9em}
+  .tc-num.spin{color:var(--ink-dim);text-shadow:none;opacity:.75}
+  .tc-num.landed{animation:pop .45s ease}
+  .tc-stmt{font-family:'Hahmlet',serif;font-weight:500;font-size:clamp(18px,4vw,26px);line-height:1.55;min-height:2.2em;display:flex;align-items:center;justify-content:center;transition:opacity .4s ease}
+  .tc-stmt.spin{color:var(--ink-dim);opacity:.75}
+  .tc-stmt.landed{animation:pop .45s ease}
+  .tc-hint{font-size:12.5px;color:var(--ink-dim);opacity:0;transition:opacity .4s ease}
+  .tc-hint.show{opacity:1}
+
+  .endwrap{display:flex;flex-direction:column;gap:16px;align-items:center;animation:pop .5s ease}
+  .end-emoji{font-size:52px;line-height:1;filter:drop-shadow(0 6px 18px var(--glow))}
+  .end-title{font-family:'Hahmlet',serif;font-weight:700;font-size:clamp(24px,5.5vw,34px)}
+  .end-sub{font-size:14px;color:var(--ink-dim);line-height:1.7}
+
+  .introwrap{display:flex;flex-direction:column;gap:18px;align-items:center;width:100%}
+  .intro-guide{font-size:15px;line-height:1.85;color:var(--ink);max-width:460px}
+  .intro-guide .hl{color:var(--accent);font-weight:600}
+  .intro-note{font-size:11.5px;color:var(--ink-dim)}
+
+  .dots{display:flex;gap:9px;justify-content:center;align-items:center;min-height:10px;margin:-6px 0 20px}
+  .dots .d{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.16);transition:background .35s,box-shadow .35s,transform .35s}
+  .dots .d.on{background:var(--accent);box-shadow:0 0 10px var(--glow)}
+  .dots .d.now{transform:scale(1.4)}
+
+  @keyframes pop{0%{opacity:0;transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+  .next{font-family:inherit;font-size:16px;color:#141018;font-weight:bold;letter-spacing:.04em;background:var(--accent);border:none;border-radius:40px;
+    padding:16px 40px;cursor:pointer;box-shadow:0 14px 34px -14px var(--glow);transition:transform .15s,filter .2s}
+  .next:active{transform:scale(.95)}
+  .next:hover{filter:brightness(1.06)}
+  .ghost{font-family:inherit;font-size:14px;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--glow);border-radius:40px;padding:15px 28px;cursor:pointer;transition:.2s}
+  .ghost:active{transform:scale(.95)}
+  .ghost:hover{background:var(--accent-soft)}
+  .pass{margin-top:16px;font-size:12px;color:var(--ink-dim)}
+  .pass b{color:var(--accent);font-weight:normal}
+
+  @media(max-height:660px){.qcard{min-height:160px;padding:26px 20px;margin:12px 0 14px}.theme-head{margin-bottom:6px}.rule{margin-top:10px}}
+</style>
+</head>
+<body>
+<div class="glow" id="glow"></div>
+<span class="petal" style="left:12%;animation-duration:13s;animation-delay:0s">🫧</span>
+<span class="petal" style="left:38%;animation-duration:17s;animation-delay:4s;font-size:15px">🫧</span>
+<span class="petal" style="left:66%;animation-duration:15s;animation-delay:2s">🫧</span>
+<span class="petal" style="left:86%;animation-duration:19s;animation-delay:7s;font-size:14px">🫧</span>
+
+<div class="stage">
+
+  <div id="home" class="screen show">
+    <div class="brand">T I P S Y &nbsp;P A R T Y</div>
+    <h1>오늘 밤 나눌 <b>이야기</b>를<br>골라 줘</h1>
+    <p class="sub">쉼에서 시작해, 삶을 지나, 애까지.</p>
+    <div class="cards" id="topCards"></div>
+  </div>
+
+  <div id="subsel" class="screen">
+    <div class="brand">T I P S Y &nbsp;P A R T Y</div>
+    <h1 id="subTitle"></h1>
+    <p class="sub" id="subDesc"></p>
+    <div class="cards" id="subCards"></div>
+    <p class="pass" style="margin-top:26px"><button class="back" onclick="goHome()">← 큰 키워드 다시 고르기</button></p>
+  </div>
+
+  <div id="table">
+    <div class="topbar">
+      <button class="back" onclick="goSubs()">← 키워드 바꾸기</button>
+      <div class="rounds" id="roundsBar">
+        <button class="rd active" data-r="1" onclick="setRound(1)">1R 가볍게</button>
+        <button class="rd" data-r="2" onclick="setRound(2)">2R</button>
+        <button class="rd" data-r="3" onclick="setRound(3)">3R 깊게</button>
+      </div>
+    </div>
+    <div class="theme-head">
+      <div class="theme-kw" id="t-kw"></div>
+      <div class="theme-name serif" id="t-name"></div>
+      <div class="rule" id="t-rule"><b>질문 카드</b> 💬 돌아가면서 편하게 이야기해요</div>
+    </div>
+    <div class="qcard" id="qcard"><span class="qmark">"</span><div id="qbody"></div></div>
+    <div class="dots" id="dots"></div>
+    <button class="next" id="nextBtn" onclick="nextQ()" style="display:none">다음 →</button>
+    <div class="pass" id="passNote" style="display:none">부담되면 <b>패스 OK</b> · 한 문장이면 충분해요</div>
+  </div>
+
+</div>
+
+<script>
+/* ---------- 데이터 ---------- */
+const TOP = {
+  rest:{kw:"쉼", desc:"잠깐 숨 고르며 나누는 이야기", tagline:"휴식 · 콘텐츠 · 취향 · 여행",
+    accent:"#5B9CE8", glow:"rgba(91,156,232,.32)", soft:"rgba(91,156,232,.12)", subs:["relax","content","taste","travel"]},
+  life:{kw:"삶", desc:"각자의 하루가 담긴 이야기", tagline:"가치관 · 일 · 미래 · 관계",
+    accent:"#F5A24E", glow:"rgba(245,162,78,.34)", soft:"rgba(245,162,78,.12)", subs:["values","work","future","relation"]},
+  love:{kw:"애", desc:"설렘과 사랑에 관한 이야기", tagline:"첫인상 · 호감 · 연애 · 사랑의 언어",
+    accent:"#EE566B", glow:"rgba(238,86,107,.32)", soft:"rgba(238,86,107,.12)", subs:["first","spark","style","language"]},
+};
+
+const SUBS = {
+  /* ── 쉼 ── */
+  relax:{kw:"휴식", emoji:"😴", name:"아무것도 안 하는 날", top:"rest",
+    q:{1:["쉬는 날 알람을 맞춰? 아니면 눈 뜰 때까지 자?","집에 하루 종일 있어도 괜찮아?","쉬는 날 가장 먼저 하는 일은 뭐야?","침대에서 하루 종일 뒹굴기 vs 밖에 나가기, 뭐가 좋아?","혼자 있을 때 가장 자주 하는 행동은 뭐야?"],
+       2:["최근에 \"오늘 진짜 잘 쉬었다\" 싶었던 날은 언제야?","스트레스 받으면 가장 먼저 뭘 해?","쉬는 날에도 꼭 해야 마음 편한 일이 있어?","혼자 쉬다가 갑자기 사람 만나고 싶었던 적 있어?","일주일 휴가가 생기면 첫날에 뭐 할 거야?"],
+       3:["요즘 너에게 가장 필요한 휴식은 뭐야?","아무것도 안 했는데 피곤했던 적 있어?","쉬면서도 죄책감을 느껴본 적 있어?","혼자 있을 때 가장 마음이 편해지는 순간은 언제야?","같이 있어도 혼자 쉬는 것처럼 편한 사람은 어떤 사람이야?"]}},
+  content:{kw:"콘텐츠", emoji:"🎬", name:"요즘 뭐 보고 살아?", top:"rest",
+    q:{1:["요즘 유튜브에서 가장 많이 보는 콘텐츠는 뭐야?","넷플릭스 켜고 고르는 데 10분 이상 걸리는 편이야?","영화 볼 때 팝콘부터 먹어, 영화부터 봐?","노래 한 곡에 꽂히면 며칠까지 반복해서 들어?","최근에 본 것 중 \"이건 진짜 웃겼다\" 싶은 거 있어?"],
+       2:["최근 본 콘텐츠 중 한 명에게만 추천한다면 뭐 추천할래?","보다가 눈물 난 콘텐츠 있어?","다시 처음부터 보고 싶은 작품 하나만 꼽아봐.","주인공보다 더 좋아했던 캐릭터 있어?","같이 콘텐츠를 본다면 상대가 어떤 리액션을 해주면 좋아?"],
+       3:["힘들 때 일부러 찾아보는 콘텐츠가 있어?","보고 난 뒤 생각이 오래 남았던 작품은 뭐야?","좋아하는 콘텐츠를 같이 좋아하는 사람을 만나면 더 친해질 것 같아?","네 인생을 영화로 만든다면 첫 장면은 어떤 장면일 것 같아?","지금 네 기분을 영화 제목으로 표현한다면 뭐야?"]}},
+  taste:{kw:"취향", emoji:"🎵", name:"겹치는 플레이리스트", top:"rest",
+    q:{1:["평생 한 음식만 먹어야 한다면 뭐 먹을래?","카페 가면 늘 시키는 메뉴 있어?","매운 음식 잘 먹어, 못 먹어?","여행 가서 맛집 줄 1시간까지 기다릴 수 있어?","옷 살 때 디자인 vs 편안함, 뭐가 더 중요해?"],
+       2:["남들은 별로라고 하는데 너는 좋아하는 게 있어?","최근에 누군가 때문에 좋아하게 된 음식이나 노래 있어?","취향이 완전히 반대인 친구랑 잘 지낼 수 있어?","친구가 추천한 걸 바로 해보는 편이야, 의심부터 하는 편이야?","좋아하는 사람 때문에 취향이 바뀌어본 적 있어?"],
+       3:["누군가와 친해질 때 취향이 비슷한 게 중요해?","내가 좋아하는 걸 상대가 싫어하면 설득하는 편이야, 포기하는 편이야?","취향 하나만 보고 그 사람을 판단한다면 뭘 볼 것 같아?","나와 정반대 취향인 사람에게 끌려본 적 있어?","\"이건 나랑 진짜 잘 맞는다\" 싶었던 사람의 취향은 뭐였어?"]}},
+  travel:{kw:"여행", emoji:"✈️", name:"떠나고 싶은 마음", top:"rest",
+    q:{1:["여행 가면 계획표부터 만드는 편이야?","여행에서 숙소 vs 맛집, 하나만 포기한다면?","여행 사진을 하루에 몇 장 정도 찍는 편이야?","바다에서 놀기 vs 산에서 걷기, 뭐가 좋아?","지금 비행기표를 끊어준다면 어디로 갈래?"],
+       2:["지금까지 간 여행 중 하루만 다시 간다면 언제야?","여행에서 가장 크게 싸워본 이유는 뭐였어?","여행 중 계획이 틀어지면 스트레스 받는 편이야?","여행할 때 아침형 vs 야행성, 어느 쪽이야?","같이 여행할 사람에게 딱 하나 바라는 게 있다면?"],
+       3:["여행을 가면 평소와 달라지는 모습이 있어?","여행하면서 \"나 이런 사람이었네\" 깨달은 적 있어?","여행을 같이 가면 그 사람의 성격이 더 잘 보인다고 생각해?","좋아하는 사람과 여행한다면 꼭 해보고 싶은 건 뭐야?","지금 삶에서 잠깐 떠나고 싶다면 어디로 가고 싶어?"]}},
+  /* ── 삶 ── */
+  values:{kw:"가치관", emoji:"🌱", name:"나를 움직이는 것", top:"life",
+    q:{1:["약속 시간보다 10분 일찍 도착하는 편이야?","돈 10만 원 vs 하루 자유시간, 뭐가 더 좋아?","혼자 밥 먹기 편해, 불편해?","계획이 틀어지면 스트레스 받는 편이야?","하루에 꼭 혼자 있어야 하는 시간이 있어?"],
+       2:["사람에게 가장 듣기 싫은 말 하나만 꼽아봐.","반대로 들으면 기분 좋아지는 말은 뭐야?","친한 사이여도 이것만큼은 지켜줬으면 하는 게 있어?","돈이 많아도 하기 싫은 일이 있어?","사람을 볼 때 가장 먼저 보는 행동은 뭐야?"],
+       3:["지금까지 한 선택 중 가장 후회 없는 선택은 뭐야?","지금의 너를 가장 많이 바꾼 사건은 뭐였어?","친한 사람과 가치관이 완전히 다르면 계속 만날 수 있어?","10년 뒤에도 지금의 나에게 남아있었으면 하는 건 뭐야?","지금 당장 하나를 포기해야 한다면 돈, 시간, 인간관계 중 뭘 포기할래?"]}},
+  work:{kw:"일", emoji:"💼", name:"먹고사는 이야기", top:"life",
+    q:{1:["출근·등교 전 가장 하기 싫은 일은 뭐야?","일할 때 음악 듣는 편이야?","월급날 가장 먼저 하는 일은 뭐야?","일 끝나고 집에 가면 가장 먼저 뭐 해?","지금 하는 일에서 제일 귀찮은 건 뭐야?"],
+       2:["지금 하는 일을 처음 시작한 이유가 뭐야?","일하면서 가장 뿌듯했던 순간은 언제야?","직장·학교에서 가장 스트레스 받는 상황은 뭐야?","지금 일을 그만둔다면 가장 먼저 뭘 해보고 싶어?","하루 동안 상사가 된다면 제일 먼저 뭘 바꿀래?"],
+       3:["돈을 많이 주지만 싫은 일 vs 돈은 적지만 좋아하는 일, 뭐를 선택할래?","아무 걱정 없이 살 수 있다면 지금 일을 계속할 거야?","어릴 때 꿈과 지금 하고 싶은 일이 얼마나 달라?","일 때문에 포기하고 싶지 않은 삶의 한 가지는 뭐야?","10년 뒤에도 지금처럼 일하고 있다면 만족할 것 같아?"]}},
+  future:{kw:"미래", emoji:"🌅", name:"내일의 나에게", top:"life",
+    q:{1:["올해 안에 꼭 하고 싶은 일 하나 있어?","갑자기 1,000만 원이 생기면 뭐 할 거야?","올해 여행을 간다면 어디로 갈래?","새로운 취미를 하나 시작한다면 뭐 할래?","5년 뒤 지금과 가장 달라져 있을 것 같은 건 뭐야?"],
+       2:["요즘 가장 신경 쓰이는 미래의 문제는 뭐야?","하고 싶지만 아직 못 하고 있는 일이 있어?","새로운 일을 시작할 때 가장 먼저 걱정하는 건 뭐야?","미래를 위해 지금 포기하고 있는 게 있어?","1년 동안 아무도 뭐라 하지 않는다면 뭘 해보고 싶어?"],
+       3:["10년 뒤 딱 하나만 이루어져 있다면 뭘 원해?","미래의 내가 지금의 나에게 가장 고마워할 행동은 뭐라고 생각해?","지금 선택 하나를 바꿀 수 있다면 뭘 바꾸고 싶어?","돈 걱정이 없다면 앞으로 어떤 삶을 살고 싶어?","미래의 나에게 딱 한 문장만 남긴다면 뭐라고 할래?"]}},
+  relation:{kw:"관계", emoji:"🤝", name:"곁에 두고 싶은 사람", top:"life",
+    q:{1:["친구에게 먼저 연락하는 편이야?","친해지는 데 오래 걸리는 편이야?","단체생활보다 소수로 만나는 게 좋아?","고민이 생기면 친구에게 바로 말하는 편이야?","친구랑 가장 자주 하는 놀이는 뭐야?"],
+       2:["친구에게 가장 서운했던 순간은 언제야?","반대로 친구에게 가장 고마웠던 순간은?","연락이 뜸해져도 계속 친구라고 생각할 수 있어?","친구가 내 고민에 현실적인 조언을 해주는 게 좋아, 공감해주는 게 좋아?","오래된 친구와 새로 만난 친구, 뭐가 더 편해?"],
+       3:["네 인생에서 가장 오래 기억에 남는 친구는 어떤 사람이야?","친구와 크게 싸웠다가 다시 친해진 경험 있어?","오래 곁에 두고 싶은 사람의 공통점은 뭐야?","아무 말 없이 같이 있어도 편한 사람이 있어?","오늘 처음 만난 사람과 친구가 될 수 있다고 생각해?"]}},
+  /* ── 애 ── */
+  first:{kw:"첫인상", emoji:"👀", name:"세 번의 눈맞춤", top:"love",
+    q:{1:["첫눈에 사람을 판단하는 편이야?","사람을 처음 만났을 때 제일 먼저 보는 건 뭐야?","먼저 말 거는 편이야, 기다리는 편이야?","첫인상이 차갑다는 말을 들어본 적 있어?","처음 만난 사람과 어색할 때 무슨 말을 꺼내?"],
+       2:["첫인상과 실제 성격이 가장 달랐던 사람은 어떤 사람이었어?","처음엔 별로였는데 친해진 사람이 있어?","반대로 첫인상은 좋았는데 달라진 사람도 있어?","말투 하나 때문에 호감이 생겨본 적 있어?","오늘 처음 봤을 때와 지금 이미지가 달라진 사람이 있어?"],
+       3:["어떤 순간에 \"이 사람 더 알고 싶다\"는 생각이 들어?","처음 만난 사람에게 마음을 여는 결정적인 순간은 언제야?","천천히 가까워지는 사람 vs 빠르게 가까워지는 사람, 어느 쪽이 좋아?","첫인상과 실제 모습 중 어느 쪽을 더 믿어?","사람에게 끌릴 때 가장 먼저 변하는 행동은 뭐라고 생각해?"]}},
+  spark:{kw:"호감 포인트", emoji:"💘", name:"심장이 반응하는 순간", top:"love",
+    q:{1:["웃긴 사람 vs 다정한 사람, 누구에게 더 끌려?","목소리 좋은 사람에게 호감이 생길 수 있어?","옷 잘 입는 사람을 보면 한 번 더 보게 돼?","연락을 잘 해주는 사람에게 호감이 생겨?","리액션 좋은 사람과 대화하면 더 끌려?"],
+       2:["대화하다가 갑자기 호감이 생긴 적 있어?","예상하지 못한 모습 때문에 설레본 적 있어?","작은 배려 하나 때문에 좋아진 적 있어?","반대로 말 한마디 때문에 호감이 확 떨어진 적 있어?","좋아하는 사람이 생기면 주변 사람이 먼저 알아채는 편이야?"],
+       3:["외모·성격·분위기 중 하나만 고른다면?","처음엔 관심 없었는데 점점 좋아진 사람이 있어?","설레는 사람과 편한 사람 중 지금은 누구에게 더 끌려?","오래 볼수록 좋아지는 사람에게는 어떤 특징이 있어?","\"이 사람은 연애하면 좋겠다\"는 생각이 드는 순간은 언제야?"]}},
+  style:{kw:"연애스타일", emoji:"💞", name:"사랑하는 방식", top:"love",
+    q:{1:["매일 연락하는 연애 vs 필요할 때 연락하는 연애?","데이트는 밖에서 놀기 vs 집에서 놀기?","연애할 때 애교가 많은 편이야?","기념일을 꼭 챙겨야 한다고 생각해?","연애할 때 혼자만의 시간이 필요해?"],
+       2:["싸우면 바로 풀어야 해, 시간을 가져야 해?","연애할 때 질투가 있는 편이야?","연인이 이성 친구와 단둘이 만나도 괜찮아?","연애할 때 가장 많이 서운해지는 상황은 뭐야?","사랑하는 사람에게 가장 듣고 싶은 말은 뭐야?"],
+       3:["사랑할 때 설렘 vs 편안함, 하나만 고른다면?","연애에서 절대 포기할 수 없는 한 가지는 뭐야?","좋아하는 사람과 싸웠을 때 자존심을 먼저 내려놓을 수 있어?","오래가는 연애에서 가장 중요한 건 뭐라고 생각해?","네가 생각하는 이상적인 데이트 하루를 말해본다면?"]}},
+  language:{kw:"사랑의 언어", emoji:"💌", name:"마음을 전하는 법", top:"love",
+    q:{1:["좋아하면 표현하는 편이야, 숨기는 편이야?","\"보고 싶어\"라는 말을 먼저 하는 편이야?","선물 vs 편지, 뭐가 더 좋아?","칭찬받으면 바로 좋아하는 티가 나?","스킨십이 많은 연애가 좋아?"],
+       2:["사랑받는다고 느끼는 가장 확실한 행동은 뭐야?","말로 표현하는 사람 vs 행동으로 보여주는 사람, 누구를 더 믿어?","서운한 일이 생기면 바로 말할 수 있어?","좋아하는 사람이 표현을 잘 안 하면 기다리는 편이야?","누군가의 사소한 행동에 감동받아본 적 있어?"],
+       3:["\"사랑해\"보다 더 듣고 싶은 말이 있다면?","좋아하는 사람에게 가장 해주고 싶은 행동은 뭐야?","표현이 서툰 사람도 사랑을 잘할 수 있다고 생각해?","사랑받을 때 가장 행복했던 순간은 언제야?","지금 누군가를 좋아한다면 가장 먼저 하고 싶은 말은 뭐야?"]}},
+};
+
+const ROUND_INTRO={
+  2:{sub:"조금 더 솔직하게",hint:"슬슬 진짜 이야기가 나올 차례야"},
+  3:{sub:"마음 깊은 곳까지",hint:"천천히, 한 문장이면 충분해"}
+};
+
+/* Mission Time — 라운드 사이, 랜덤 3명이 뽑혀 질문 답변 or 미션 수행 */
+const PLAYERS = 6;
+const TC_QUESTIONS = [
+  "오늘 여기서 은근히 신경 쓰였던 사람이 있다?",
+  "오늘 한 번 더 이야기해보고 싶은 사람이 있다?",
+  "둘이 술 마시면 재밌을 것 같은 사람이 있다?",
+  "처음 봤을 때보다 지금 더 매력적으로 보이는 사람이 있다?",
+  "나랑 은근히 케미가 잘 맞을 것 같은 사람이 있다?",
+  "오늘 번호를 교환해도 어색하지 않을 것 같은 사람이 있다?",
+  "오늘 처음 봤지만 왠지 궁금해지는 사람이 있다?",
+  "친구가 소개해준다면 한 번 만나보고 싶은 사람이 있다?"
+];
+const TC_MISSIONS = [
+  "지금까지 대화 중 제일 인상 깊었던 말을 한 사람 지목하기",
+  "오늘 대화 중 제일 공감됐던 이야기를 한 사람 지목하기",
+  "나랑 취향이 제일 비슷할 것 같은 사람 지목하고 이유 말하기",
+  "나랑 웃음 코드가 제일 잘 맞는 사람 지목하기",
+  "나랑 여행 가면 잘 맞을 것 같은 사람 지목하기",
+  "첫인상이 제일 반전이었던 사람 지목하기",
+  "테이블 분위기 메이커라고 생각하는 사람 지목하기",
+  "테이블에서 제일 잘 웃는 사람 지목하기"
+];
+
+/* ---------- 상태 ---------- */
+let curTop=null, cur=null, round=1, queue=[], qi=0, started=false, interRound=false, wakeLock=null;
+let showChallenge=false, ended=false, tcDeck=[], curItem=null, curNums=[], tcSpin=null, tcSpinning=false;
+
+/* ---------- 화면: 대분류 ---------- */
+const topEl=document.getElementById('topCards');
+Object.entries(TOP).forEach(([k,t])=>{
+  const d=document.createElement('div');
+  d.className='pick'; d.style.setProperty('--pk',t.accent);
+  d.innerHTML=`<div class="dot"></div><div class="nm">${t.kw}</div><div class="cc">${t.desc}</div><div class="md">${t.tagline}</div>`;
+  d.onclick=()=>openSubs(k);
+  topEl.appendChild(d);
+});
+function applyTheme(t){const r=document.documentElement.style;r.setProperty('--accent',t.accent);r.setProperty('--glow',t.glow);r.setProperty('--accent-soft',t.soft);}
+function show(id){['home','subsel'].forEach(s=>document.getElementById(s).classList.toggle('show',s===id));
+  document.getElementById('table').classList.toggle('show',id==='table');}
+
+/* ---------- 화면: 소분류 ---------- */
+function openSubs(k){
+  curTop=k; const t=TOP[k];
+  applyTheme(t);
+  document.getElementById('glow').classList.add('on');
+  document.getElementById('subTitle').innerHTML=`<b>${t.kw}</b>의 결을<br>골라 줘`;
+  document.getElementById('subDesc').textContent=t.desc;
+  const box=document.getElementById('subCards'); box.innerHTML='';
+  t.subs.forEach(sk=>{
+    const s=SUBS[sk]; if(!s)return;
+    const d=document.createElement('div');
+    d.className='pick'; d.style.setProperty('--pk',t.accent);
+    d.innerHTML=`<div style="font-size:30px;line-height:1;margin-bottom:11px">${s.emoji||''}</div><div class="nm">${s.kw}</div><div class="cc">${s.name}</div><div class="md">질문 카드</div>`;
+    d.onclick=()=>openTable(sk);
+    box.appendChild(d);
+  });
+  show('subsel');
+}
+function goHome(){ curTop=null; document.getElementById('glow').classList.remove('on'); show('home'); }
+function goSubs(){ clearTcSpin(); cur=null; started=false; interRound=false; showChallenge=false; ended=false; openSubs(curTop); }
+
+/* ---------- 화면: 테이블 ---------- */
+function openTable(sk){
+  clearTcSpin(); interRound=false; showChallenge=false; ended=false; requestWake();
+  cur=sk; round=1; started=false;
+  const s=SUBS[sk], t=TOP[s.top];
+  applyTheme(t);
+  document.getElementById('t-kw').textContent=`${t.kw} · ${s.kw}`;
+  document.getElementById('t-name').textContent=s.name;
+  document.getElementById('roundsBar').style.display='flex';
+  document.getElementById('nextBtn').style.display='none';
+  document.getElementById('passNote').style.display='none';
+  document.getElementById('qcard').classList.add('start');
+  document.querySelectorAll('.rd').forEach(b=>b.classList.toggle('active',b.dataset.r==='1'));
+  document.getElementById('qbody').innerHTML=`<div class="introwrap">
+    <div class="intro-guide">「${s.kw}」에 대한 <span class='hl'>질문 카드</span>가 한 장씩 떠 💬<br>돌아가면서 편하게 답해 줘.<br>정답은 없어, 솔직할수록 가까워져 🥂</div>
+    <div class="intro-note">시작 전에 시계 방향으로 <b style="color:var(--accent)">1번~6번</b> 번호를 정해 줘 · 라운드가 끝나면 랜덤 3명에게 질문 & 미션이! 🎲</div>
+    <button class="next" onclick="startTable()">시작하기 →</button></div>`;
+  updateDots();
+  show('table');
+}
+function startTable(){
+  started=true; interRound=false; showChallenge=false; ended=false; clearTcSpin();
+  tcDeck=shuffle([...TC_QUESTIONS.map(t=>({t:'q',s:t})),...TC_MISSIONS.map(t=>({t:'m',s:t}))]);
+  document.getElementById('qcard').classList.remove('start');
+  document.getElementById('passNote').style.display='block';
+  buildQueue(); render(true);
+}
+function setRound(r){round=r;clearTcSpin();showChallenge=false;ended=false;document.querySelectorAll('.rd').forEach(b=>b.classList.toggle('active',+b.dataset.r===r));buildQueue();interRound=(started&&r>1&&!!ROUND_INTRO[r]);if(started)render(false);}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function buildQueue(){queue=shuffle([...SUBS[cur].q[round]]);qi=0;}
+
+function cardHTML(){
+  const item=queue[qi];
+  if(ended){
+    return `<div class="endwrap"><div class="end-emoji">🥂</div><div class="end-title">게임 종료</div><div class="end-sub">세 개의 라운드를 모두 지나왔어요.<br>오늘의 대화가 좋은 기억으로 남기를!</div><button class="next" onclick="goSubs()">다른 키워드 골라보기 →</button><button class="ghost" onclick="startTable()">이 키워드 한 번 더 ↺</button></div>`;
+  }
+  if(showChallenge){
+    const lb = curItem&&curItem.t==='q' ? '💬 질문 타임' : '🎯 미션 타임';
+    return `<div class="tcwrap"><div class="tc-label">${lb}</div><div class="tc-nums"><span class="tc-num spin">?</span><span class="tc-num spin">?</span><span class="tc-num spin">?</span></div><div class="tc-stmt" id="tcText" style="opacity:0"></div><div class="tc-hint show" id="tcHint">두구두구… 오늘의 주인공 세 명은? 🎲</div></div>`;
+  }
+  if(interRound){const ri=ROUND_INTRO[round]||{};
+    return `<div class="rwrap"><div class="r-num">${round}R</div><div class="r-sub">${ri.sub||''}</div><div class="r-hint">${ri.hint||'준비되면 다음을 눌러줘'}</div></div>`;
+  }
+  return `<div class="taste"><div class="taste-stmt">${item}</div><div class="taste-hint">돌아가면서 편하게 이야기해 줘 💬</div></div>`;
+}
+function updateNextBtn(){
+  const nb=document.getElementById('nextBtn'), pn=document.getElementById('passNote');
+  if(!started||ended){nb.style.display='none';if(ended)pn.style.display='none';return;}
+  if(tcSpinning){nb.style.display='none';pn.style.display='none';return;}
+  nb.style.display='inline-block';
+  nb.textContent = showChallenge ? (round<3?'다음 라운드 시작하기 →':'게임 마무리하기 →') : '다음 →';
+  pn.style.display = showChallenge ? 'none' : 'block';
+}
+/* 챌린지 룰렛: 여러 미션이 빠르게 지나가다 점점 느려지며 착지 */
+function clearTcSpin(){ if(tcSpin){clearTimeout(tcSpin);tcSpin=null;} tcSpinning=false; }
+function startChallengeSpin(){
+  const els=[...document.querySelectorAll('.tc-num')]; if(els.length!==3)return;
+  clearTcSpin(); tcSpinning=true; updateNextBtn();
+  let ticks=0, delay=70;
+  const landAt=[10,15,20], landed=[false,false,false];
+  const tick=()=>{
+    const es=[...document.querySelectorAll('.tc-num')];
+    if(es.length!==3){clearTcSpin();return;}
+    ticks++;
+    es.forEach((el,i)=>{
+      if(landed[i])return;
+      if(ticks>=landAt[i]){
+        el.textContent=curNums[i]+'번';
+        el.classList.remove('spin'); el.classList.add('landed');
+        landed[i]=true;
+      } else {
+        el.textContent=(1+Math.floor(Math.random()*PLAYERS))+'번';
+      }
+    });
+    if(landed.every(Boolean)){
+      setTimeout(()=>{
+        const t=document.getElementById('tcText');
+        if(t&&curItem){t.textContent=curItem.s;t.style.opacity=1;t.classList.add('landed');}
+        const h=document.getElementById('tcHint');
+        if(h)h.textContent = curItem&&curItem.t==='q'
+          ? '뽑힌 세 명이 솔직하게 답해 줘 · 있다/없다만 말해도 OK!'
+          : '뽑힌 세 명이 미션 수행 · 부담되면 패스 OK!';
+        tcSpinning=false; updateNextBtn();
+      },450);
+      return;
+    }
+    delay=Math.min(delay*1.09,220);
+    tcSpin=setTimeout(tick,delay);
+  };
+  tick();
+}
+function updateDots(){
+  const d=document.getElementById('dots'); if(!d)return;
+  if(!started||interRound||showChallenge||ended||!queue.length){d.innerHTML='';return;}
+  d.innerHTML=queue.map((_,i)=>`<span class="d${i<qi?' on':(i===qi?' on now':'')}"></span>`).join('');
+}
+function render(instant){const b=document.getElementById('qbody');
+  if(instant){b.innerHTML=cardHTML();updateDots();updateNextBtn();return;}
+  b.classList.add('fade');setTimeout(()=>{b.innerHTML=cardHTML();b.classList.remove('fade');updateDots();updateNextBtn();},380);}
+function nextQ(){
+  if(ended)return;
+  if(interRound){interRound=false;render(false);return;}
+  if(showChallenge){
+    showChallenge=false;
+    if(round<3){ setRound(round+1); }
+    else { ended=true; render(false); }
+    return;
+  }
+  if(qi<queue.length-1){ qi++; render(false); return; }
+  /* 라운드의 마지막 질문 종료 → 질문/미션 타임 (3인 번호 룰렛 연출) */
+  curNums = shuffle(Array.from({length:PLAYERS},(_,i)=>i+1)).slice(0,3).sort((a,b)=>a-b);
+  if(!tcDeck.length) tcDeck=shuffle([...TC_QUESTIONS.map(t=>({t:'q',s:t})),...TC_MISSIONS.map(t=>({t:'m',s:t}))]);
+  curItem = tcDeck.pop();
+  showChallenge=true; render(false);
+  setTimeout(startChallengeSpin, 430);
+}
+
+async function requestWake(){try{if('wakeLock' in navigator){wakeLock=await navigator.wakeLock.request('screen');}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(wakeLock!==null&&document.visibilityState==='visible')requestWake();});
+</script>
+</body>
+</html>
